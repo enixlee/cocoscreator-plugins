@@ -9,6 +9,11 @@ if (!Editor.__Menu__) {
     Editor.__Menu__ = Editor.Menu;
 }
 
+const ExportTextType = {
+    Js: 0,
+    ES6: 1,
+};
+
 module.exports = {
     load() {
         // execute when package loaded
@@ -102,23 +107,33 @@ class CustomMenu extends Editor.__Menu__ {
             template.splice(insertIndex++, 0, groupMenu);
 
             groupMenu.submenu.push({
-                label: "导出节点参数",
+                label: "导出全部节点",
                 enabled: groupMenuEnable,
                 click: () => {
-                    const assets = Editor.Selection.curSelection("asset");
-                    if (!assets || assets.length == 0) {
-                        Editor.error("未选中节点");
-                        return;
-                    }
-                    const uuid = assets[0];
-                    Editor.log("选中的节点", uuid);
-                    const info = Editor.assetdb.assetInfoByUuid(uuid);
-                    if (!info || info.path.indexOf(".prefab") < 0) {
-                        Editor.error("选中的节点文件不是prefab", info);
-                        return;
-                    }
-
-                    getParamsCopyOfNode(info);
+                    getParamsCopyOfNode();
+                },
+            });
+            groupMenu.submenu.push({
+                label: "导出当前节点",
+                enabled: groupMenuEnable,
+                click: (node, args) => {
+                    // const asset = getCurrentSelectedNode();
+                    // const nodeMap = generatePrefabNodeMap(asset);
+                    Editor.log("comming soon!");
+                },
+            });
+            groupMenu.submenu.push({
+                label: "导出全部节点（ES6）",
+                enabled: groupMenuEnable,
+                click: () => {
+                    getParamsCopyOfNode(ExportTextType.ES6);
+                },
+            });
+            groupMenu.submenu.push({
+                label: "导出当前节点（ES6）",
+                enabled: groupMenuEnable,
+                click: () => {
+                    Editor.log("comming soon!");
                 },
             });
         } else if (menuLocation == "component") {
@@ -174,7 +189,22 @@ const KEY_PREFAB_NODE_NAME = "_name";
 const KEY_PREFAB_NODE_CHILDREN_ID = "__id__";
 const KEY_PREFAB_NODE_PAREN = "_parent";
 
-function getParamsCopyOfNode(asset) {
+function getCurrentSelectedNode() {
+    const assets = Editor.Selection.curSelection("asset");
+    if (!assets || assets.length == 0) {
+        Editor.error("未选中节点");
+        return null;
+    }
+    const uuid = assets[0];
+    const info = Editor.assetdb.assetInfoByUuid(uuid);
+    if (!info || info.path.indexOf(".prefab") < 0) {
+        Editor.error("选中的节点文件不是prefab", info);
+        return null;
+    }
+    return info;
+}
+
+function generatePrefabNodeMap(asset, texttype) {
     const nodeMap = {};
 
     const path = asset.path;
@@ -225,9 +255,16 @@ function getParamsCopyOfNode(asset) {
                     node[KEY_PREFAB_NODE_NAME],
                     nodeMap
                 );
-                data[
-                    "export"
-                ] = `this.${name} = cc.find("${data["path"]}", this.node);`;
+
+                let text = "";
+                if (texttype === ExportTextType.Js) {
+                    text = `this.${name} = cc.find("${data["path"]}", this.node);`;
+                } else if (texttype === ExportTextType.ES6) {
+                    text = `get ${name}() {
+    return this.node.getChildByName("${data["path"]}");
+}\n`;
+                }
+                data["export"] = text;
 
                 count++;
             } else {
@@ -241,19 +278,28 @@ function getParamsCopyOfNode(asset) {
         }
     });
 
+    return nodeMap;
+}
+
+function getParamsCopyOfNode(texttype = ExportTextType.Js) {
+    const asset = getCurrentSelectedNode();
+    const nodeMap = generatePrefabNodeMap(asset, texttype);
+
     let params = ``;
+    let count = 0;
     Object.keys(nodeMap).forEach((key) => {
         const exportStr = nodeMap[key]["export"];
         if (exportStr) {
             // Editor.log(`${exportStr}\n`) ;
             params += `${exportStr}\n`;
+            count++;
         }
     });
 
     // Windows
     exec("clip").stdin.end(params);
 
-    // // Mac
+    // Mac
     // exec("pbcopy").stdin.end(params);
 
     Editor.log(`export complete, total params count: ${count} .`);
