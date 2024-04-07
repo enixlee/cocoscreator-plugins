@@ -1,15 +1,15 @@
 "use strict";
 const fs = require("fs");
+const pathTool = require("path");
 const { exec } = require("child_process");
 const readline = require("readline");
 
 /**
  * TODO:
- * 1. LOG_PATH should be configured.
- * 2. Single node must be highlighted; cannot find the focus of node selected by right-clicking the mouse.
+ * 1. Single node must be highlighted; cannot find the focus of node selected by right-clicking the mouse.
  */
 
-const LOG_FILE = `C:\\Users\\enixlee\\.CocosCreator\\logs\\CocosCreator.log`;
+const LOG_FILE = `CocosCreator.log`;
 
 if (!Editor.__Menu__) {
     Editor.__Menu__ = Editor.Menu;
@@ -118,7 +118,7 @@ class CustomMenu extends Editor.__Menu__ {
                 click: () => {
                     getParamsCopyOfNode();
                 },
-            });
+            }); 
             groupMenu.submenu.push({
                 label: "导出当前节点",
                 enabled: groupMenuEnable,
@@ -136,7 +136,7 @@ class CustomMenu extends Editor.__Menu__ {
 
                     copyToClipboard(text);
 
-                    Editor.log("param declaration has been copied!", text);
+                    Editor.log("Params have been exported and copied to the clipboard.", text);
                 },
             });
             groupMenu.submenu.push({
@@ -163,7 +163,7 @@ class CustomMenu extends Editor.__Menu__ {
 
                     copyToClipboard(text);
 
-                    Editor.log("param declaration has been copied!", text);
+                    Editor.log("Params have been exported and copied to the clipboard.", text);
                 },
             });
         } else if (menuLocation == "component") {
@@ -368,9 +368,11 @@ function getSelectedNodeInfoByMenuTemplate(template) {
         const clickFunc = nodeInfo[0].click;
         clickFunc();
 
-        const readStream = fs.createReadStream(LOG_FILE, {
+        const logsDirectory = pathTool.join(__dirname, '../../logs');
+        const logFile = `${logsDirectory}\\${LOG_FILE}`;
+        const readStream = fs.createReadStream(logFile, {
             encoding: "utf8",
-            start: fs.statSync(LOG_FILE).size,
+            start: fs.statSync(logFile).size,
         });
 
         const rl = readline.createInterface({
