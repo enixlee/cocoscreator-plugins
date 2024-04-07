@@ -136,7 +136,7 @@ class CustomMenu extends Editor.__Menu__ {
 
                     copyToClipboard(text);
 
-                    Editor.log("Params have been exported and copied to the clipboard.", text);
+                    Editor.log("Params have been exported and copied to the clipboard.");
                 },
             });
             groupMenu.submenu.push({
@@ -163,7 +163,7 @@ class CustomMenu extends Editor.__Menu__ {
 
                     copyToClipboard(text);
 
-                    Editor.log("Params have been exported and copied to the clipboard.", text);
+                    Editor.log("Params have been exported and copied to the clipboard.");
                 },
             });
         } else if (menuLocation == "component") {
@@ -410,7 +410,7 @@ function normalNodeParamsExport(name, path) {
 
 function es6NodeParamsExport(name, path) {
     return `get ${name}() {
-    return this.node.getChildByName("${path}");
+    return cc.find("${path}", this.node);
 }\n`;
 }
 
