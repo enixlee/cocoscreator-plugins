@@ -1,10 +1,16 @@
 "use strict";
 const fs = require("fs");
 const { exec } = require("child_process");
+const readline = require("readline");
 
-//在重写Editor.Menu之前，先持有其引用，在必要的时候可以还原回去
-//并且这一行必须写在文件前面，因为CustomMenu需要继承Editor.Menu,
-//但是又不能直接extends Editor.Menu，因为Editor.Menu本身会被CustomMenu覆盖
+/**
+ * TODO:
+ * 1. LOG_PATH should be configured.
+ * 2. Single node must be highlighted; cannot find the focus of node selected by right-clicking the mouse.
+ */
+
+const LOG_FILE = `C:\\Users\\enixlee\\.CocosCreator\\logs\\CocosCreator.log`;
+
 if (!Editor.__Menu__) {
     Editor.__Menu__ = Editor.Menu;
 }
@@ -116,10 +122,21 @@ class CustomMenu extends Editor.__Menu__ {
             groupMenu.submenu.push({
                 label: "导出当前节点",
                 enabled: groupMenuEnable,
-                click: (node, args) => {
-                    // const asset = getCurrentSelectedNode();
-                    // const nodeMap = generatePrefabNodeMap(asset);
-                    Editor.log("comming soon!");
+                click: async () => {
+                    const selectedNode =
+                        await getSelectedNodeInfoByMenuTemplate(template);
+                    if (!selectedNode) {
+                        return;
+                    }
+
+                    const text = normalNodeParamsExport(
+                        selectedNode.name,
+                        selectedNode.path
+                    );
+
+                    copyToClipboard(text);
+
+                    Editor.log("param declaration has been copied!", text);
                 },
             });
             groupMenu.submenu.push({
@@ -132,8 +149,21 @@ class CustomMenu extends Editor.__Menu__ {
             groupMenu.submenu.push({
                 label: "导出当前节点（ES6）",
                 enabled: groupMenuEnable,
-                click: () => {
-                    Editor.log("comming soon!");
+                click: async () => {
+                    const selectedNode =
+                        await getSelectedNodeInfoByMenuTemplate(template);
+                    if (!selectedNode) {
+                        return;
+                    }
+
+                    const text = es6NodeParamsExport(
+                        selectedNode.name,
+                        selectedNode.path
+                    );
+
+                    copyToClipboard(text);
+
+                    Editor.log("param declaration has been copied!", text);
                 },
             });
         } else if (menuLocation == "component") {
@@ -258,11 +288,9 @@ function generatePrefabNodeMap(asset, texttype) {
 
                 let text = "";
                 if (texttype === ExportTextType.Js) {
-                    text = `this.${name} = cc.find("${data["path"]}", this.node);`;
+                    text = normalNodeParamsExport(name, data["path"]);
                 } else if (texttype === ExportTextType.ES6) {
-                    text = `get ${name}() {
-    return this.node.getChildByName("${data["path"]}");
-}\n`;
+                    text = es6NodeParamsExport(name, data["path"]);
                 }
                 data["export"] = text;
 
@@ -296,11 +324,7 @@ function getParamsCopyOfNode(texttype = ExportTextType.Js) {
         }
     });
 
-    // Windows
-    exec("clip").stdin.end(params);
-
-    // Mac
-    // exec("pbcopy").stdin.end(params);
+    copyToClipboard(params);
 
     Editor.log(`export complete, total params count: ${count} .`);
 }
@@ -321,4 +345,77 @@ function getParamDeclare(node, nodePath, nodeMap) {
     const newPath = `${node.parent.name}/${nodePath}`;
 
     return getParamDeclare(nodeMap[node.parent.name], newPath, nodeMap);
+}
+
+function getSelectedNodeInfoByMenuTemplate(template) {
+    return new Promise((resolve, reject) => {
+        const asset = getCurrentSelectedNode();
+        if (!asset || !asset.path) {
+            Editor.error("invalid node", asset);
+            resolve(null);
+            return;
+        }
+
+        const nodeInfo = template.filter(
+            (item) => item.label === "显示节点 UUID 和路径"
+        );
+        if (nodeInfo.length <= 0) {
+            Editor.log("未找到被选中的节点");
+            resolve(null);
+            return;
+        }
+
+        const clickFunc = nodeInfo[0].click;
+        clickFunc();
+
+        const readStream = fs.createReadStream(LOG_FILE, {
+            encoding: "utf8",
+            start: fs.statSync(LOG_FILE).size,
+        });
+
+        const rl = readline.createInterface({
+            input: readStream,
+            crlfDelay: Infinity,
+        });
+
+        // all log-print must be forbidden
+        rl.on("line", (line) => {
+            rl.close();
+            if (!line || line.indexOf("Path:") < 0) {
+                return;
+            }
+            const path = line.split("Path: ")[1].split(",")[0].trim();
+            const uuid = line.split("UUID: ")[1].trim();
+
+            const pathDirList = path.split("/");
+            if (pathDirList.length === 1) {
+                Editor.error("无法生成根节点参数声明", path);
+                resolve(null);
+                return;
+            }
+
+            resolve({
+                path: pathDirList.splice(1).join("/"),
+                name: pathDirList[0],
+                uuid: uuid,
+            });
+        });
+    });
+}
+function normalNodeParamsExport(name, path) {
+    return `this.${name} = cc.find("${path}", this.node);`;
+}
+
+function es6NodeParamsExport(name, path) {
+    return `get ${name}() {
+    return this.node.getChildByName("${path}");
+}\n`;
+}
+
+function copyToClipboard(text) {
+    // Windows
+    exec("clip").stdin.end(text);
+
+    // Mac
+    // exec("pbcopy").stdin.end(text);
 }
