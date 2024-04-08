@@ -118,21 +118,17 @@ class CustomMenu extends Editor.__Menu__ {
                 click: () => {
                     getParamsCopyOfNode();
                 },
-            }); 
+            });
             groupMenu.submenu.push({
                 label: "导出当前节点",
                 enabled: groupMenuEnable,
                 click: async () => {
-                    const selectedNode =
-                        await getSelectedNodeInfoByMenuTemplate(template);
+                    const selectedNode = await getSelectedNodeInfoByMenuTemplate(template);
                     if (!selectedNode) {
                         return;
                     }
 
-                    const text = normalNodeParamsExport(
-                        selectedNode.name,
-                        selectedNode.path
-                    );
+                    const text = normalNodeParamsExport(selectedNode.name, selectedNode.path);
 
                     copyToClipboard(text);
 
@@ -150,16 +146,12 @@ class CustomMenu extends Editor.__Menu__ {
                 label: "导出当前节点（ES6）",
                 enabled: groupMenuEnable,
                 click: async () => {
-                    const selectedNode =
-                        await getSelectedNodeInfoByMenuTemplate(template);
+                    const selectedNode = await getSelectedNodeInfoByMenuTemplate(template);
                     if (!selectedNode) {
                         return;
                     }
 
-                    const text = es6NodeParamsExport(
-                        selectedNode.name,
-                        selectedNode.path
-                    );
+                    const text = es6NodeParamsExport(selectedNode.name, selectedNode.path);
 
                     copyToClipboard(text);
 
@@ -268,9 +260,7 @@ function generatePrefabNodeMap(asset, texttype) {
                 }
                 let data = {
                     parent: {
-                        name: jsonNodeArr[parent[KEY_PREFAB_NODE_CHILDREN_ID]][
-                            KEY_PREFAB_NODE_NAME
-                        ],
+                        name: jsonNodeArr[parent[KEY_PREFAB_NODE_CHILDREN_ID]][KEY_PREFAB_NODE_NAME],
                         id: parent[KEY_PREFAB_NODE_CHILDREN_ID],
                     },
                     name: name,
@@ -280,11 +270,7 @@ function generatePrefabNodeMap(asset, texttype) {
 
                 nodeMap[name] = data;
 
-                data["path"] = getParamDeclare(
-                    data,
-                    node[KEY_PREFAB_NODE_NAME],
-                    nodeMap
-                );
+                data["path"] = getParamDeclare(data, node[KEY_PREFAB_NODE_NAME], nodeMap);
 
                 let text = "";
                 if (texttype === ExportTextType.Js) {
@@ -356,9 +342,7 @@ function getSelectedNodeInfoByMenuTemplate(template) {
             return;
         }
 
-        const nodeInfo = template.filter(
-            (item) => item.label === "显示节点 UUID 和路径"
-        );
+        const nodeInfo = template.filter((item) => item.label === "显示节点 UUID 和路径");
         if (nodeInfo.length <= 0) {
             Editor.log("未找到被选中的节点");
             resolve(null);
@@ -368,7 +352,7 @@ function getSelectedNodeInfoByMenuTemplate(template) {
         const clickFunc = nodeInfo[0].click;
         clickFunc();
 
-        const logsDirectory = pathTool.join(__dirname, '../../logs');
+        const logsDirectory = pathTool.join(__dirname, "../../logs");
         const logFile = `${logsDirectory}\\${LOG_FILE}`;
         const readStream = fs.createReadStream(logFile, {
             encoding: "utf8",
@@ -398,7 +382,7 @@ function getSelectedNodeInfoByMenuTemplate(template) {
 
             resolve({
                 path: pathDirList.splice(1).join("/"),
-                name: pathDirList[0],
+                name: pathDirList[pathDirList.length - 1],
                 uuid: uuid,
             });
         });
