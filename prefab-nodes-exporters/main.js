@@ -379,12 +379,16 @@ function getSelectedNodeInfoByMenuTemplate(template) {
                 resolve(null);
                 return;
             }
+            const name = pathDirList[pathDirList.length - 1];
+            const relativePath = pathDirList.splice(1).join("/");
 
-            resolve({
-                path: pathDirList.splice(1).join("/"),
-                name: pathDirList[pathDirList.length - 1],
+            const assetNodeInfo = {
+                name: name,
+                path: relativePath,
                 uuid: uuid,
-            });
+            };
+
+            resolve(assetNodeInfo);
         });
     });
 }
