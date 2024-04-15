@@ -1,22 +1,19 @@
 {
-  "name": "prefab-nodes-exports",
-  "version": "0.0.1",
-  "description": "The package template for getting started.",
-  "author": "Cocos Creator",
-  "main": "main.js",
-  "main-menu": {
-    "i18n:MAIN_MENU.package.title/prefab-nodes-exports/open": {
-      "message": "prefab-nodes-exports:open"
+    "name": "prefab-nodes-exports",
+    "version": "0.0.3",
+    "description": "The package template for getting started.",
+    "author": "Cocos Creator",
+    "main": "main.js",
+    "main-menu": {
+        "i18n:MAIN_MENU.package.title/prefab-nodes-exports/sayHi": {
+            "message": "prefab-nodes-exports:sayHi"
+        }
     },
-    "i18n:MAIN_MENU.package.title/prefab-nodes-exports/hello": {
-      "message": "prefab-nodes-exports:say-hello"
+    "panel": {
+        "main": "panel/index.js",
+        "type": "dockable",
+        "title": "prefab-nodes-exports",
+        "width": 400,
+        "height": 300
     }
-  },
-  "panel": {
-    "main": "panel/index.js",
-    "type": "dockable",
-    "title": "prefab-nodes-exports",
-    "width": 400,
-    "height": 300
-  }
 }

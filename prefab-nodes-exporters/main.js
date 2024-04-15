@@ -20,6 +20,13 @@ const ExportTextType = {
     ES6: 1,
 };
 
+let curSelectNode = {
+    name: null,
+    path: null,
+    id: null,
+    uuid: null,
+};
+
 module.exports = {
     load() {
         // execute when package loaded
@@ -41,6 +48,52 @@ module.exports = {
             Editor.Menu = Editor.__Menu__;
             Editor.log("已停用自定义上下文菜单");
         },
+        "selection:activated"(target, type, id) {
+            if (type !== "node") {
+                return;
+            }
+
+            // query-animation-properties
+            // scene:animation-clip-changed
+            // scene:query-animation-clip
+            // Editor.Ipc.sendToPanel("scene", "scene:query-node", id, (err, res) => {
+            //     if (!res || err) {
+            //         Editor.log("choose node error", id);
+            //         return;
+            //     }
+
+            //     const resData = JSON.parse(res);
+            //     const name = resData.value.name.value;
+            //     const path = null;
+            //     const uuid = resData.value.uuid;
+
+            //     setCurrentNode(name, path, id, uuid);
+            // });
+
+            // 节点信息
+            /**
+             * {
+                    name: 'forge_01',
+                    missed: false,
+                    nodeID: '73yGejBc5Gdoiz+XYtfiaa',
+                    compID: null,
+                    compIDList: []
+               }
+             */
+            // Editor.Ipc.sendToPanel("scene", "scene:query-node-info", id, "cc.Node", (error, info) => {
+            //     if (error) return Editor.error(error);
+            //     Editor.log("节点信息", info);
+            // });
+
+            // // 节点函数信息
+            // Editor.Ipc.sendToPanel("scene", "scene:query-node-functions", id, (error, functions) => {
+            //     if (error) {
+            //         return Editor.error(error);
+            //     }
+            //     // functions
+            //     Editor.log("节点函数信息", functions);
+            // });
+        },
     },
 };
 
@@ -49,7 +102,6 @@ module.exports = {
 class CustomMenu extends Editor.__Menu__ {
     constructor(template, webContent) {
         //打印编辑器默认菜单数据
-        // Editor.log(template);
 
         let menuLocation; //菜单所在区域
 
@@ -58,18 +110,27 @@ class CustomMenu extends Editor.__Menu__ {
         //可以添加/删除/重写template的元素实现自定义菜单功能
         if (template.length > 0) {
             let first = template[0];
-            if (first.label == "创建节点")
+
+            if (first.label == "创建节点") {
                 //场景节点右键菜单
                 menuLocation = "node";
-            else if (first.label == "新建")
+            } else if (first.label == "新建") {
                 //asset右键菜单
                 menuLocation = "asset";
-            else if (first.label == "Remove")
+            } else if (first.label == "Remove") {
                 //脚本组件菜单
                 menuLocation = "component";
-            else if (first.path && first.path.startsWith("渲染组件"))
+            } else if (first.path && first.path.startsWith("渲染组件")) {
                 //添加组件菜单
                 menuLocation = "addcomponent";
+            } else if (first.label && first.label.startsWith("清空数据") && template.length >= 2) {
+                const second = template[1];
+                if (second.label && second.label.startsWith("移动数据")) {
+                    menuLocation = "animationPanel";
+                    Editor.log("动画", template);
+                    Editor.log("content", webContent);
+                }
+            }
             //还有其他区域的菜单比如控制台面板菜单，就不再列举了
         }
 
@@ -129,7 +190,7 @@ class CustomMenu extends Editor.__Menu__ {
                     }
 
                     const text = normalNodeParamsExport(selectedNode.name, selectedNode.path);
-
+                    Editor.log("需要导出的参数", text);
                     copyToClipboard(text);
 
                     Editor.log("Params have been exported and copied to the clipboard.");
@@ -152,12 +213,32 @@ class CustomMenu extends Editor.__Menu__ {
                     }
 
                     const text = es6NodeParamsExport(selectedNode.name, selectedNode.path);
-
+                    Editor.log("需要导出的E6参数", text);
                     copyToClipboard(text);
 
                     Editor.log("Params have been exported and copied to the clipboard.");
                 },
             });
+
+            // 增加动画复制
+            // template.splice(insertIndex++, 0, { type: "separator" });
+            // let animMenuEnable = true;
+            // let groupMenuAnim = { label: "节点动画处理", enabled: true, submenu: [] };
+            // template.splice(insertIndex++, 0, groupMenuAnim);
+            // groupMenuAnim.submenu.push({
+            //     label: "拷贝动画数据",
+            //     enabled: animMenuEnable,
+            //     click: () => {
+            //         copyAnimationFrameData();
+            //     },
+            // });
+            // groupMenuAnim.submenu.push({
+            //     label: "粘贴动画数据",
+            //     enabled: animMenuEnable,
+            //     click: () => {
+            //         pasteAnimationFrameData();
+            //     },
+            // });
         } else if (menuLocation == "component") {
             //在这里插入组件菜单，可传递节点uuid，
             let params = template[0].params;
@@ -184,6 +265,26 @@ class CustomMenu extends Editor.__Menu__ {
                     Editor.log("TODO: add user custom scripts");
                 },
             });
+        } else if (menuLocation === "animationPanel") {
+            let copyMenu = {
+                label: "拷贝动画数据",
+                enabled: true,
+                click: (data, args, x) => {
+                    copyAnimationFrameData(data, args, x);
+                },
+            };
+
+            let pasteMenu = {
+                label: "粘贴动画数据",
+                enabled: true,
+                click: () => {
+                    pasteAnimationFrameData(data, args, x);
+                },
+            };
+
+            template.push({ type: "separator" });
+            template.push(copyMenu);
+            template.push(pasteMenu);
         }
 
         super(template, webContent);
@@ -352,44 +453,62 @@ function getSelectedNodeInfoByMenuTemplate(template) {
         const clickFunc = nodeInfo[0].click;
         clickFunc();
 
-        const logsDirectory = pathTool.join(__dirname, "../../logs");
-        const logFile = `${logsDirectory}\\${LOG_FILE}`;
-        const readStream = fs.createReadStream(logFile, {
-            encoding: "utf8",
-            start: fs.statSync(logFile).size,
-        });
-
-        const rl = readline.createInterface({
-            input: readStream,
-            crlfDelay: Infinity,
-        });
-
-        // all log-print must be forbidden
-        rl.on("line", (line) => {
-            rl.close();
-            if (!line || line.indexOf("Path:") < 0) {
-                return;
+        let dirName = null;
+        const targetPluginPath = Editor.Package.packagePath("i18n");
+        if (targetPluginPath.indexOf(".CocosCreator") > 0) {
+            dirName = pathTool.join(targetPluginPath, "../../logs");
+        } else {
+            const paths = Editor.Package.paths;
+            for (let i = 0; i < paths.length; i++) {
+                const target = paths[i];
+                if (target.indexOf(".CocosCreator") > 0) {
+                    dirName = pathTool.join(target, "../logs");
+                    break;
+                }
             }
-            const path = line.split("Path: ")[1].split(",")[0].trim();
-            const uuid = line.split("UUID: ")[1].trim();
+        }
 
-            const pathDirList = path.split("/");
-            if (pathDirList.length === 1) {
-                Editor.error("无法生成根节点参数声明", path);
-                resolve(null);
-                return;
-            }
-            const name = pathDirList[pathDirList.length - 1];
-            const relativePath = pathDirList.splice(1).join("/");
+        const logFile = `${dirName}\\${LOG_FILE}`;
 
-            const assetNodeInfo = {
-                name: name,
-                path: relativePath,
-                uuid: uuid,
-            };
+        try {
+            const readStream = fs.createReadStream(logFile, {
+                encoding: "utf8",
+                start: fs.statSync(logFile).size,
+            });
+            const rl = readline.createInterface({
+                input: readStream,
+                crlfDelay: Infinity,
+            });
 
-            resolve(assetNodeInfo);
-        });
+            // all log-print must be forbidden
+            rl.on("line", (line) => {
+                rl.close();
+                if (!line || line.indexOf("Path:") < 0) {
+                    return;
+                }
+                const path = line.split("Path: ")[1].split(",")[0].trim();
+                const uuid = line.split("UUID: ")[1].trim();
+
+                const pathDirList = path.split("/");
+                if (pathDirList.length === 1) {
+                    Editor.error("无法生成根节点参数声明", path);
+                    resolve(null);
+                    return;
+                }
+                const name = pathDirList[pathDirList.length - 1];
+                const relativePath = pathDirList.splice(1).join("/");
+
+                const assetNodeInfo = {
+                    name: name,
+                    path: relativePath,
+                    uuid: uuid,
+                };
+
+                resolve(assetNodeInfo);
+            });
+        } catch (e) {
+            Editor.error("出错了", e);
+        }
     });
 }
 function normalNodeParamsExport(name, path) {
@@ -408,4 +527,33 @@ function copyToClipboard(text) {
 
     // Mac
     // exec("pbcopy").stdin.end(text);
+}
+
+/**
+ * 拷贝动画帧动画
+ */
+function copyAnimationFrameData() {
+    let assetSelection = Editor.Selection.curSelection("asset");
+    let assetNode = Editor.Selection.curSelection("node");
+
+    Editor.log("asset is:", assetSelection);
+    Editor.log("node is:", assetNode);
+    Editor.log("Editor.Selection is:", Editor.Selection.curGlobalActivate());
+
+    const path = Editor.assetdb.uuidToFspath(curSelectNode.id);
+    const url = Editor.assetdb.uuidToUrl(curSelectNode.id);
+
+    Editor.log("路径", path);
+    Editor.log("url", url);
+}
+
+function pasteAnimationFrameData() {}
+
+function setCurrentNode(name, path, id, uuid) {
+    curSelectNode = {
+        name,
+        path,
+        id,
+        uuid,
+    };
 }
