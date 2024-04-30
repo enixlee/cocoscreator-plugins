@@ -1,0 +1,35 @@
+{
+    "name": "env-selector",
+    "version": "0.0.1",
+    "description": "choose runtime env for game",
+    "author": "enixlee",
+    "main": "main.js",
+    "main-menu": {
+        "i18n:MAIN_MENU.package.title/env-selector/测试服": {
+            "message": "env-selector:ChooseTestServer"
+        },
+        "i18n:MAIN_MENU.package.title/env-selector/玉鹏服": {
+            "message": "env-selector:ChooseYuPengServer"
+        },
+        "i18n:MAIN_MENU.package.title/env-selector/小军服": {
+            "message": "env-selector:ChooseXiaoJunServer"
+        },
+        "i18n:MAIN_MENU.package.title/env-selector/志远服": {
+            "message": "env-selector:ChooseZhiYuanServer"
+        },
+        "i18n:MAIN_MENU.package.title/env-selector/微信": {
+            "message": "env-selector:ChooseWXServer"
+        },
+        "i18n:MAIN_MENU.package.title/env-selector/重启": {
+            "message": "env-selector:reloadEditor"
+        }
+    },
+    "panel": {
+        "main": "panel/index.js",
+        "type": "dockable",
+        "title": "env-selector",
+        "width": 400,
+        "height": 300
+    },
+    "scene-script": "scene.js"
+}
