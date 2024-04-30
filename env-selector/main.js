@@ -57,8 +57,8 @@ module.exports = {
         const envConfig = this.loadEnvConfig();
         let fileKey = envConfig ? envConfig[key] : key;
         const content = config.loadEnv(fileKey);
-        config.changeDebugConfig(content, ++version);
-        this.forceRefresh();
+        config.changeDebugConfig(fileKey, content, ++version);
+        this.forceRefresh(fileKey);
     },
 
     // resetConfigFile(content) {
@@ -68,14 +68,7 @@ module.exports = {
     //     }
     // },
 
-    forceRefresh() {
-        // exec("curl http://localhost:7456/update-db", (error, stdout, stderr) => {
-        //     if (error) {
-        //         Editor.error(`Error executing curl: ${error.message}`);
-        //         return;
-        //     }
-        // });
-
+    forceRefresh(envKey) {
         try {
             Editor.assetdb.refresh(`db:/${config.filePath}`, function (err, results) {
                 if (err) {
@@ -83,7 +76,7 @@ module.exports = {
                 } else {
                     Editor.log("Assets refreshed successfully");
                     Editor.Ipc.sendToPanel("scene", "scene:stash-and-save");
-                    Editor.log(`game updated!`);
+                    Editor.log(`game updated, current env: `, envKey);
                 }
             });
         } catch (error) {

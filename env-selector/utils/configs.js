@@ -42,18 +42,20 @@ const configFile = () => {
     return `${filePath}${fileName}.js`;
 };
 
-const changeDebugConfig = (configs, version = 1) => {
+const changeDebugConfig = (key, configs, version = 1) => {
     if (!configs || configs.length === 0) {
         return;
     }
 
     const debugFilePath = path.join(projectPath(), configFile());
-    // 先把原来的文件删了
+
     if (fs.existsSync(debugFilePath)) {
         fs.unlinkSync(debugFilePath);
         const debugFilePathMeta = path.join(projectPath(), `${filePath}${fileName}.js.meta`);
         fs.unlinkSync(debugFilePathMeta);
     }
+
+    configs["currentEnv"] = key;
     const fileContent = JSON.stringify(configs);
 
     const content = `const version = ${version};\r\nconst config = ${fileContent}\r\nexports.config=config;`;
