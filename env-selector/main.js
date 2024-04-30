@@ -46,10 +46,18 @@ module.exports = {
             // Editor.log("scene:reloading", target);
         },
         "editor:build-start"(target) {
-            Editor.log("editor:build-start", target);
+            try {
+                config.setWxConfigState(true);
+            } catch (e) {
+                Editor.error("start", e);
+            }
         },
         "editor:build-finished"(target) {
-            Editor.log("editor:build-finished", target);
+            try {
+                config.setWxConfigState(false);
+            } catch (e) {
+                Editor.error("end", e);
+            }
         },
     },
 

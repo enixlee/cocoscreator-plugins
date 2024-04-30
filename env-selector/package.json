@@ -16,12 +16,6 @@
         },
         "i18n:MAIN_MENU.package.title/env-selector/志远服": {
             "message": "env-selector:ChooseZhiYuanServer"
-        },
-        "i18n:MAIN_MENU.package.title/env-selector/微信": {
-            "message": "env-selector:ChooseWXServer"
-        },
-        "i18n:MAIN_MENU.package.title/env-selector/重启": {
-            "message": "env-selector:reloadEditor"
         }
     },
     "panel": {
