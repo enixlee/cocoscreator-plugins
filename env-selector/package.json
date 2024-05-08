@@ -16,6 +16,9 @@
         },
         "i18n:MAIN_MENU.package.title/env-selector/志远服": {
             "message": "env-selector:ChooseZhiYuanServer"
+        },
+        "i18n:MAIN_MENU.package.title/env-selector/微信渠道（打包）": {
+            "message": "env-selector:ChooseWXServer"
         }
     },
     "panel": {

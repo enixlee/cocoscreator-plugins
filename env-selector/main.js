@@ -1,7 +1,7 @@
 const config = require("./utils/configs");
-const { exec } = require("child_process");
 
 let version = 0;
+let currentEnv = "";
 
 const KEY_ENV_FILE = {
     test: "test",
@@ -47,6 +47,9 @@ module.exports = {
         },
         "editor:build-start"(target) {
             try {
+                if (currentEnv !== KEY_ENV_FILE.wx) {
+                    Editor.error("当前环境不是微信环境，请切换到微信环境再进行构建");
+                }
                 config.setWxConfigState(true);
             } catch (e) {
                 Editor.error("start", e);
@@ -67,6 +70,8 @@ module.exports = {
         const content = config.loadEnv(fileKey);
         config.changeDebugConfig(fileKey, content, ++version);
         this.forceRefresh(fileKey);
+
+        currentEnv = key;
     },
 
     // resetConfigFile(content) {
