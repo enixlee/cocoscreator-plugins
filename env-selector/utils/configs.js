@@ -90,15 +90,6 @@ const setWxConfigState = (state) => {
     }
 
     if (state) {
-        const debugFile = configFile();
-        const debugFilePath = path.join(projectPath(), debugFile);
-
-        if (fs.existsSync(debugFilePath)) {
-            fs.unlinkSync(debugFilePath);
-            const debugFilePathMeta = path.join(projectPath(), `${debugFile}.meta`);
-            fs.unlinkSync(debugFilePathMeta);
-        }
-
         let newFile = fileContent.replace(/isSubpackage: false,/g, `isSubpackage: true,`);
         newFile = newFile.replace(/needSDKUid: false,/g, `needSDKUid: true,`);
         saveWxConfigFile(newFile);
