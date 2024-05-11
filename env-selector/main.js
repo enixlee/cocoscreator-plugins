@@ -67,7 +67,10 @@ module.exports = {
     changeConfigFile(key) {
         const envConfig = this.loadEnvConfig();
         let fileKey = envConfig ? envConfig[key] : key;
-        const content = config.loadEnv(fileKey);
+        let content = config.loadEnv(fileKey);
+        if (!content) {
+            content = this.defaultEnvConfig(fileKey);
+        }
         config.changeDebugConfig(fileKey, content, ++version);
         this.forceRefresh(fileKey);
 
@@ -89,11 +92,46 @@ module.exports = {
                 } else {
                     Editor.log("Assets refreshed successfully");
                     Editor.Ipc.sendToPanel("scene", "scene:stash-and-save");
-                    Editor.log(`game updated, current env: `, envKey);
+                    Editor.log(`game updated, current server: `, envKey);
                 }
             });
         } catch (error) {
             Editor.error("error", error);
         }
+    },
+
+    defaultEnvConfig(key) {
+        let content = null;
+        switch (key) {
+            case KEY_ENV_FILE.test:
+                content = {
+                    loginServiceUrl: "https://wx-test-login.h5world.com:20012",
+                };
+                break;
+            case KEY_ENV_FILE.yupeng:
+                content = {
+                    loginServiceUrl: `loginServiceUrl=http://192.168.1.5:20012`,
+                };
+                break;
+            case KEY_ENV_FILE.xiaojun:
+                content = {
+                    loginServiceUrl: `loginServiceUrl=http://192.168.1.139:20012`,
+                };
+                break;
+            case KEY_ENV_FILE.zhiyuan:
+                content = {
+                    loginServiceUrl: `loginServiceUrl=http://192.168.1.182:20012`,
+                };
+                break;
+            case KEY_ENV_FILE.wx:
+                content = {
+                    needSDKUid: true,
+                    isSubpackage: true,
+                };
+                break;
+            default:
+                break;
+        }
+        return content;
     },
 };
